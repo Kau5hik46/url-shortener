@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import { Url } from '../models/Url';
 import redis from '../redisClient';
 
@@ -32,5 +33,28 @@ export const getUrlAnalytics = async (req: Request, res: Response): Promise<void
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+};
+
+export const generateWeeklyReport = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const totalUrls = await Url.count({
+            where: { createdAt: { [Op.gte]: oneWeekAgo } },
+        });
+
+        const totalClicks = await Url.sum('clickCount', {
+            where: { createdAt: { [Op.gte]: oneWeekAgo } },
+        });
+
+        res.status(200).json({
+            totalUrlsCreated: totalUrls,
+            totalClicks,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to generate weekly report' });
     }
 };

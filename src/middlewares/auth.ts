@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key'; // Use a secure secret from .env
 
@@ -10,20 +10,27 @@ export function generateToken(userId: string): string {
     return jwt.sign(payload, JWT_SECRET, options);
 }
 
+// Define an extended Request type to include `user`
+interface AuthenticatedRequest extends Request {
+    user?: string | JwtPayload;
+}
+
 // Middleware to Authenticate JWT Token
-export function authenticateToken(req: Request, res: Response, next: NextFunction): void | Response {
+export const authenticateToken: RequestHandler = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized' });
+    if (!token) {
+        res.status(401).json({ error: 'No token provided' });
+        return; // Ensure the function exits after sending the response
     }
 
-    const token = authHeader.split(' ')[1];
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        (req as any).user = decoded; // Attach user info to the request
+    jwt.verify(token, process.env.JWT_SECRET || 'default-secret', (err: jwt.VerifyErrors | null, user: string | JwtPayload | undefined) => {
+        if (err) {
+            res.status(403).json({ error: 'Invalid token' });
+            return;
+        }
+        req.user = user; // Populate req.user with decoded token payload
         next();
-    } catch (err) {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
+    });
 }

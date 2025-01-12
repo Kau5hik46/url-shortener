@@ -7,3 +7,7 @@ export async function setCache(key: string, value: string, ttl: number) {
 export async function getCache(key: string): Promise<string | null> {
     return redis.get(key);
 }
+
+export async function se(key: string) {
+    await redis.del(key);
+}
