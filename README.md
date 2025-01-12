@@ -44,3 +44,4 @@ CREATE TABLE urls (
 
 ```
 
+#### Common issues: Password configuration can be different
