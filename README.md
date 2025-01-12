@@ -46,3 +46,23 @@ CREATE TABLE urls (
 ```
 
 #### Common issues: Password configuration can be different
+
+
+### Redis Server
+
+Install the Redis 
+
+``` brew install redis ```
+
+Start the redis server using ``` redis-server ```
+
+### Project
+
+This project was made with Node.js v20@lts. Ensure you have the same version by running
+```nvm use 20```
+
+In the base directory of the project, run ```npm install``` to install the dependencies
+
+To start the server, run ``` npm run start```
+
+To run the test cases, run ```npm test```
