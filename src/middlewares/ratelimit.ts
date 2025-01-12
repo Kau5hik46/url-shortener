@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { getCache, setCache } from '../utils/cache'; // Assuming getCache and setCache are imported
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET_KEY } from '../config';
+import {JWT_SECRET_KEY} from '../config';
 
 const RATE_LIMIT = 10; // Max requests per minute
 const RATE_LIMIT_WINDOW = 60; // Time window in seconds (1 minute)
@@ -14,23 +14,24 @@ export const rateLimit = async (
 ): Promise<void> => {
     try {
         // Extract the JWT token from the Authorization header
-        const token = req.header('Authorization')?.replace('Bearer ', ''); // Assuming token is passed as Bearer token
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
         if (!token) {
             res.status(401).json({ error: 'Missing or invalid token' });
             return;
         }
         // Decode the token to extract the username (userID or email could also be used)
         const decoded: any = jwt.verify(token, JWT_SECRET_KEY); // Assuming the token contains 'username'
-        const username = decoded.username;
+        const email = decoded.email;
 
         // Check if the username exists
-        if (!username) {
-            res.status(401).json({ error: 'Invalid token' });
+        if (!email) {
+            res.status(401).json({ error: 'Token does not correspond to any user' });
             return;
         }
 
         // Check if the user has exceeded the rate limit
-        const requestCountKey = `rate-limit:${username}`;
+        const requestCountKey = `rate-limit:${email}`;
         const requestCount = await getCache(requestCountKey);
 
         if (requestCount && parseInt(requestCount) >= RATE_LIMIT) {

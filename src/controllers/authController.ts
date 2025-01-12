@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User'; // Ensure correct path
-import JWT_SECRET_KEY from '../config';
+import {JWT_SECRET_KEY} from '../config';
 
 // Signup function
 export const signupUser = async (

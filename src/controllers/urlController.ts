@@ -1,14 +1,9 @@
 import { Request, Response } from 'express';
 import { generateShortCodeFromUrl } from '../utils/hash';
-import { createUrl, getUrlByShortCode } from '../db/urlRepository';
-
-import dotenv from 'dotenv';
+import { bulkInsert, createUrl, getUrlByShortCode } from '../db/urlRepository';
 import { getCache, setCache } from '../utils/cache';
+import { HOST, PORT } from '../config';
 
-dotenv.config();
-
-const PORT = process.env.PORT;
-const HOST = process.env.HOSTNAME;
 
 // Shorten a given URL and return the shortened version
 export const shortenUrl = async (
@@ -90,5 +85,56 @@ export const getOriginalUrl = async (
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to retrieve original URL' });
+    }
+};
+
+export const bulkCreateShortUrl = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { urls } = req.body;
+
+        if (!Array.isArray(urls) || urls.length === 0) {
+            res.status(400).json({ error: 'URLs should be a non-empty array.' });
+            return;
+        }
+
+        const result = [];
+        const bulkInsertData = [];
+
+        for (const originalUrl of urls) {
+            if (!originalUrl) continue;
+
+            // Check cache for an existing short code
+            const cachedShortCode = await getCache(originalUrl);
+            if (cachedShortCode) {
+                result.push({ originalUrl, shortUrl: `http://${HOST}:${PORT}/${cachedShortCode}` });
+                continue;
+            }
+
+            // Generate short code
+            const shortCode = generateShortCodeFromUrl(originalUrl);
+
+            // Add to bulk insert data
+            bulkInsertData.push({
+                originalUrl,
+                shortCode,
+                createdAt: new Date(),
+                clickCount: 0,
+            });
+
+            // Cache the result
+            await setCache(originalUrl, shortCode, 3600); // Cache for 1 hour
+
+            result.push({ originalUrl, shortUrl: `http://${HOST}:${PORT}/${shortCode}` });
+        }
+
+        // Bulk insert into the database
+        if (bulkInsertData.length > 0) {
+            await bulkInsert(bulkInsertData) // Sequelize bulk insert
+        }
+
+        res.status(201).json({ data: result });
+    } catch (error) {
+        console.error('Error in bulkCreateShortUrl:', error);
+        res.status(500).json({ error: 'Failed to process the request.' });
     }
 };

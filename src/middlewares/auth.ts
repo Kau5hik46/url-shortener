@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { JWT_SECRET_KEY } from '../config';
+import {JWT_SECRET_KEY} from '../config';
 
 // Generate JWT Token
 export function generateToken(userId: string): string {

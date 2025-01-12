@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { signupUser, loginUser } from '../controllers/authController';
-import { shortenUrl, getOriginalUrl } from '../controllers/urlController';
+import { shortenUrl, getOriginalUrl, bulkCreateShortUrl } from '../controllers/urlController';
 import {
     getUrlAnalytics,
     generateWeeklyReport,
@@ -27,5 +27,8 @@ router.post('/shorten', authenticateToken, rateLimit, shortenUrl);
 
 // Route to get the original URL from a shortened URL
 router.get('/:shortCode', authenticateToken, getOriginalUrl);
+
+// Route to create short urls in bulk
+router.post('/bulk-short-urls', rateLimit, bulkCreateShortUrl);
 
 export default router;

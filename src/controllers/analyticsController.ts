@@ -9,13 +9,6 @@ export const getUrlAnalytics = async (
     res: Response,
 ): Promise<void> => {
     try {
-        // Check if analytics data is cached
-        const cachedAnalytics = await getCache('analytics');
-        if (cachedAnalytics) {
-            res.status(200).json(JSON.parse(cachedAnalytics));
-            return;
-        }
-
         // Get total number of shortened URLs
         const totalUrls = await Url.count();
 

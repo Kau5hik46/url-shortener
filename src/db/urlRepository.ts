@@ -27,3 +27,7 @@ export async function updateClickCount(
         await url.save();
     }
 }
+
+export async function bulkInsert(bulkInsertData: Array<any>) {
+    Url.bulkCreate(bulkInsertData, { ignoreDuplicates: true });
+}
