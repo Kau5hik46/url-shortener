@@ -1,13 +1,16 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Url } from '../models/Url';
-import redis from '../redisClient';
+import { getCache, setCache } from '../utils/cache';
 
 // Get analytics for all URLs
-export const getUrlAnalytics = async (req: Request, res: Response): Promise<void> => {
+export const getUrlAnalytics = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
     try {
         // Check if analytics data is cached
-        const cachedAnalytics = await redis.get('analytics');
+        const cachedAnalytics = await getCache('analytics');
         if (cachedAnalytics) {
             res.status(200).json(JSON.parse(cachedAnalytics));
             return;
@@ -17,17 +20,21 @@ export const getUrlAnalytics = async (req: Request, res: Response): Promise<void
         const totalUrls = await Url.count();
 
         // Find most accessed and least accessed URLs
-        const mostAccessed = await Url.findOne({ order: [['clickCount', 'DESC']] });
-        const leastAccessed = await Url.findOne({ order: [['clickCount', 'ASC']] });
+        const mostAccessed = await Url.findOne({
+            order: [['clickCount', 'DESC']],
+        });
+        const leastAccessed = await Url.findOne({
+            order: [['clickCount', 'ASC']],
+        });
 
         const analyticsData = {
             totalUrls,
             mostAccessed,
-            leastAccessed
+            leastAccessed,
         };
 
         // Cache analytics data for 10 minutes
-        await redis.set('analytics', JSON.stringify(analyticsData), 'EX', 600);
+        await setCache('analytics', JSON.stringify(analyticsData), 600);
 
         res.status(200).json(analyticsData);
     } catch (error) {
@@ -36,7 +43,10 @@ export const getUrlAnalytics = async (req: Request, res: Response): Promise<void
     }
 };
 
-export const generateWeeklyReport = async (req: Request, res: Response): Promise<void> => {
+export const generateWeeklyReport = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);

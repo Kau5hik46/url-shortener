@@ -8,6 +8,6 @@ export async function getCache(key: string): Promise<string | null> {
     return redis.get(key);
 }
 
-export async function se(key: string) {
+export async function deleteCache(key: string) {
     await redis.del(key);
 }

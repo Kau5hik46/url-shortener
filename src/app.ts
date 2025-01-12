@@ -12,10 +12,13 @@ app.use('/', routes);
 app.use(errorHandler);
 
 // Sync sequelize with the database
-sequelize.sync().then(() => {
-    console.log('Database synced');
-}).catch((error) => {
-    console.error('Error syncing the database:', error);
-});
+sequelize
+    .sync()
+    .then(() => {
+        console.log('Database synced');
+    })
+    .catch((error) => {
+        console.error('Error syncing the database:', error);
+    });
 
-export default app
+export default app;

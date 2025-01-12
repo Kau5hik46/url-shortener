@@ -2,20 +2,28 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User'; // Ensure correct path
+import JWT_SECRET_KEY from '../config';
 
 // Signup function
-export const signupUser = async (req: Request, res: Response): Promise<void> => {
+export const signupUser = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
-        res.status(400).json({ error: 'Name, email, and password are required' });
+        res.status(400).json({
+            error: 'Name, email, and password are required',
+        });
         return;
     }
 
     try {
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
-            res.status(409).json({ error: 'User already exists with this email' });
+            res.status(409).json({
+                error: 'User already exists with this email',
+            });
             return;
         }
 
@@ -30,8 +38,8 @@ export const signupUser = async (req: Request, res: Response): Promise<void> => 
 
         const token = jwt.sign(
             { userId: newUser.id, email: newUser.email },
-            process.env.JWT_SECRET || 'default-secret',
-            { expiresIn: '1h' }
+            JWT_SECRET_KEY,
+            { expiresIn: '1h' },
         );
 
         res.status(201).json({
@@ -71,8 +79,8 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
         const token = jwt.sign(
             { userId: user.id, email: user.email },
-            process.env.JWT_SECRET || 'default-secret',
-            { expiresIn: '1h' }
+            JWT_SECRET_KEY,
+            { expiresIn: '1h' },
         );
 
         res.status(200).json({

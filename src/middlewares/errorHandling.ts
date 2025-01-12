@@ -5,7 +5,12 @@ interface AppError extends Error {
 }
 
 // Centralized Error Handler
-export function errorHandler(err: AppError, req: Request, res: Response, next: NextFunction): void {
+export function errorHandler(
+    err: AppError,
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): void {
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Log the error stack in development for debugging

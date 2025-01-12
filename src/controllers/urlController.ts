@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { generateShortCodeFromUrl } from '../utils/hash';
-import { Url } from '../models/Url';
-import redis from '../redisClient';
+import { createUrl, getUrlByShortCode } from '../db/urlRepository';
 
 import dotenv from 'dotenv';
+import { getCache, setCache } from '../utils/cache';
 
 dotenv.config();
 
@@ -11,7 +11,10 @@ const PORT = process.env.PORT;
 const HOST = process.env.HOSTNAME;
 
 // Shorten a given URL and return the shortened version
-export const shortenUrl = async (req: Request, res: Response): Promise<void> => {
+export const shortenUrl = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
     try {
         const { originalUrl } = req.body;
 
@@ -21,27 +24,23 @@ export const shortenUrl = async (req: Request, res: Response): Promise<void> => 
         }
 
         // Check if the URL is already shortened (cached)
-        const cachedShortCode = await redis.get(originalUrl);
+        const cachedShortCode = await getCache(originalUrl);
         if (cachedShortCode) {
-            res.status(200).json({ shortUrl: `http://${HOST}:${PORT}/${cachedShortCode}` });
+            res.status(200).json({
+                shortUrl: `http://${HOST}:${PORT}/${cachedShortCode}`,
+            });
             return;
         }
 
-        // Generate short code
+        // Generate short code and store in database
         const shortCode = generateShortCodeFromUrl(originalUrl);
+        const newUrl = createUrl(originalUrl, shortCode);
 
-        // Store the URL in the database
-        const newUrl = await Url.upsert({
-            originalUrl,
-            shortCode,
-            createdAt: new Date(),
-            clickCount: 0
+        await setCache(originalUrl, shortCode, 3600);
+
+        res.status(201).json({
+            shortUrl: `http://${HOST}:${PORT}/${shortCode}`,
         });
-
-        // Cache the short code with the original URL as the key
-        await redis.set(originalUrl, shortCode, 'EX', 3600); // Expires in 1 hour
-
-        res.status(201).json({ shortUrl: `http://${HOST}:${PORT}/${shortCode}` });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to shorten URL' });
@@ -49,15 +48,18 @@ export const shortenUrl = async (req: Request, res: Response): Promise<void> => 
 };
 
 // Get the original URL using the short code
-export const getOriginalUrl = async (req: Request, res: Response): Promise<void> => {
+export const getOriginalUrl = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
     try {
         const { shortCode } = req.params;
 
         // Check if the original URL is cached
-        const cachedUrl = await redis.get(shortCode);
+        const cachedUrl = await getCache(shortCode);
         if (cachedUrl) {
             // Increment the click count in the database and cache
-            const url = await Url.findOne({ where: { shortCode } });
+            const url = await getUrlByShortCode(shortCode);
             if (url) {
                 url.clickCount += 1;
                 await url.save();
@@ -69,7 +71,7 @@ export const getOriginalUrl = async (req: Request, res: Response): Promise<void>
         }
 
         // Find the URL based on the short code
-        const url = await Url.findOne({ where: { shortCode } });
+        const url = await getUrlByShortCode(shortCode);
 
         if (!url) {
             res.status(404).json({ error: 'Shortened URL not found' });
@@ -77,7 +79,7 @@ export const getOriginalUrl = async (req: Request, res: Response): Promise<void>
         }
 
         // Cache the original URL with the short code as the key
-        await redis.set(shortCode, url.originalUrl, 'EX', 3600); // Expires in 1 hour
+        await setCache(shortCode, url.originalUrl, 3600); // Expires in 1 hour
 
         // Increment the click count
         url.clickCount += 1;

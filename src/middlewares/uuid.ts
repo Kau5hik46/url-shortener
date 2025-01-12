@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
-export function identifyUser(req: Request, res: Response, next: NextFunction): void {
+export function identifyUser(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): void {
     // Check for existing user identifier in cookies
     const userId = req.cookies['userId'];
 
