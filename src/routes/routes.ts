@@ -1,14 +1,33 @@
-import express from 'express';
+import { Router } from 'express';
+import { shortenUrl, getOriginalUrl, getUrlAnalytics } from '../controllers/urlController';
 
-const router = express.Router();
+const router = Router();
 
-// Shorten a URL
-router.post('/shorten', authenticateToken, rateLimiter, shortenUrlHandler);
+// Route to get URL analytics
+router.get('/analytics', async (req, res) => {
+    try {
+        await getUrlAnalytics(req, res);
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching URL analytics' });
+    }
+});
 
-// Redirect to the original URL
-router.get('/:shortCode', getOriginalUrlHandler);
+// Route to shorten a URL
+router.post('/shorten', async (req, res) => {
+    try {
+        await shortenUrl(req, res);
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while shortening the URL' });
+    }
+});
 
-// Get analytics
-router.get('/analytics', authenticateToken, getAnalyticsHandler);
+// Route to get the original URL from a shortened URL
+router.get('/:shortCode', async (req, res) => {
+    try {
+        await getOriginalUrl(req, res);
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching the original URL' });
+    }
+});
 
 export default router;

@@ -1,16 +1,19 @@
 import express from 'express';
-import cors from 'cors';
-import { errorHandler } from './middlewares/errorHandling';
 import routes from './routes/routes';
+import { sequelize } from './db/sequelize'; // Assuming sequelize instance is imported from here
+import { errorHandler } from './middlewares/errorHandling';
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-// Base Routes
-app.use('/', routes);
-
-// Error Handling middleware
+app.use(express.json()); // For parsing JSON bodies
+app.use('/', routes); // Apply the routes to the '/api' prefix
 app.use(errorHandler);
 
-export default app;
+// Sync sequelize with the database
+sequelize.sync().then(() => {
+    console.log('Database synced');
+}).catch((error) => {
+    console.error('Error syncing the database:', error);
+});
+
+export default app

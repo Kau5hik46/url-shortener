@@ -13,6 +13,4 @@ const sequelize = new Sequelize({
   logging: false,
 });
 
-console.log(sequelize.config);
-
 export { sequelize };

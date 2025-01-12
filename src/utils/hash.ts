@@ -8,6 +8,4 @@ function generateShortCodeFromUrl(url: string): string {
     return hash.substring(0, 6); // Take the first 6 characters of the URL-safe base64 hash
 }
 
-console.log(generateShortCodeFromUrl('http://localhost/crypt')); // Example usage
-
 export { generateShortCodeFromUrl };
