@@ -31,3 +31,16 @@ To create the database for the specific project, run the following SQL statement
 
 ``` CREATE DATABASE url_shortener; ```
 
+To create a table within that database, run the following
+
+```
+CREATE TABLE urls (
+    id SERIAL PRIMARY KEY,
+    original_url TEXT NOT NULL,
+    short_code VARCHAR(10) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    click_count INT DEFAULT 0
+);
+
+```
+
